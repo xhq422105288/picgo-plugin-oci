@@ -7,20 +7,21 @@ function createS3Client(opts) {
     let sslEnabled = true;
     if (opts.endpoint) {
         try {
-            const u = new URL(opts.endpoint);
-            sslEnabled = u.protocol === "https:";
+            sslEnabled = new URL(opts.endpoint).protocol === "https:";
         }
-        catch (_) {
+        catch (_a) {
             sslEnabled = true;
         }
     }
     const httpHandlerOpts = {};
     const proxyAgent = (0, utils_1.getProxyAgent)(opts.proxy, sslEnabled);
-    if (sslEnabled) {
-        httpHandlerOpts.httpsAgent = proxyAgent;
-    }
-    else {
-        httpHandlerOpts.httpAgent = proxyAgent;
+    if (proxyAgent) {
+        if (sslEnabled) {
+            httpHandlerOpts.httpsAgent = proxyAgent;
+        }
+        else {
+            httpHandlerOpts.httpAgent = proxyAgent;
+        }
     }
     const clientOptions = {
         region: opts.region,
@@ -46,31 +47,22 @@ async function createUploadTask(opts) {
         result.error = new Error(`"${opts.item.fileName}" No image data provided`);
         return result;
     }
-    let body;
-    let contentType;
-    let contentEncoding;
     try {
-        ({ body, contentType, contentEncoding } = await (0, utils_1.extractInfo)(opts.item));
-    }
-    catch (err) {
-        result.error = new Error(`Failed to extract "${opts.item.fileName}" image info: ${err instanceof Error ? err.message : String(err)}`);
-        return result;
-    }
-    const acl = opts.acl;
-    const command = new client_s3_1.PutObjectCommand({
-        Bucket: opts.bucketName,
-        Key: opts.path,
-        ACL: acl,
-        Body: body,
-        ContentType: contentType,
-        ContentEncoding: contentEncoding || undefined,
-    });
-    try {
+        const { body, contentType, contentEncoding } = await (0, utils_1.extractInfo)(opts.item);
+        const command = new client_s3_1.PutObjectCommand({
+            Bucket: opts.bucketName,
+            Key: opts.path,
+            ACL: opts.acl,
+            Body: body,
+            ContentType: contentType,
+            ContentEncoding: contentEncoding || undefined,
+        });
         await opts.client.send(command);
-        result.url = `https://${opts.bucketName}.${opts.path}`;
     }
     catch (err) {
-        result.error = new Error(`Failed to upload "${opts.item.fileName}" to OCI: ${err instanceof Error ? err.message : String(err)}`);
+        result.error = err instanceof Error
+            ? err
+            : new Error(`Upload failed: ${String(err)}`);
     }
     return result;
 }

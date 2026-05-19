@@ -25,7 +25,7 @@ function mergePluginConfig(userConfig) {
             type: "input",
             default: userConfig.namespace,
             required: true,
-            message: "OCI Object Storage Namespace (find in OCI Console: Tenancy > Object Storage Settings)",
+            message: "OCI Object Storage Namespace\n(OCI Console > Tenancy > Object Storage Settings)",
             alias: "Namespace",
         },
         {
@@ -41,15 +41,15 @@ function mergePluginConfig(userConfig) {
             type: "input",
             default: userConfig.bucketName,
             required: true,
-            message: "Bucket Name",
+            message: "OCI Object Storage Bucket Name",
             alias: "Bucket Name",
         },
         {
             name: "uploadPath",
             type: "input",
-            default: userConfig.uploadPath,
+            default: userConfig.uploadPath || "{year}/{month}/{md5}.{extName}",
             required: true,
-            message: "Upload path template (e.g. {year}/{month}/{md5}.{extName})",
+            message: "Upload path template\nAvailable: {year} {month} {day} {fullName} {fileName} {extName} {md5} {sha1} {sha256}",
             alias: "Upload Path",
         },
         {
@@ -57,7 +57,7 @@ function mergePluginConfig(userConfig) {
             type: "input",
             default: userConfig.endpoint,
             required: false,
-            message: "Custom endpoint (leave empty to auto-construct from namespace and region)",
+            message: "Custom endpoint (leave empty to auto-build from namespace + region)",
             alias: "Endpoint",
         },
         {
@@ -65,7 +65,7 @@ function mergePluginConfig(userConfig) {
             type: "input",
             default: userConfig.proxy,
             required: false,
-            message: "Proxy URL (e.g. http://127.0.0.1:1080)",
+            message: "HTTP Proxy (e.g. http://127.0.0.1:1080)",
             alias: "Proxy",
         },
         {
@@ -81,13 +81,13 @@ function mergePluginConfig(userConfig) {
             type: "input",
             default: userConfig.outputURLPattern || "",
             required: false,
-            message: "Custom output URL template (optional)",
+            message: "Custom output URL (e.g. https://cdn.example.com/{path})\nAvailable: {namespace} {region} {bucket} {path} {fileName} {extName}",
             alias: "Output URL Pattern",
         },
     ];
 }
 function getPluginConfig(ctx) {
-    const defaultConfig = {
+    const defaults = {
         accessKeyID: "",
         secretAccessKey: "",
         namespace: "",
@@ -96,24 +96,30 @@ function getPluginConfig(ctx) {
         uploadPath: "{year}/{month}/{md5}.{extName}",
         acl: "public-read",
     };
-    let userConfig = ctx.getConfig("picBed.oci");
-    if (!userConfig) {
-        userConfig = Object.assign({}, defaultConfig);
-    }
-    else {
-        userConfig = Object.assign(Object.assign({}, defaultConfig), userConfig);
-    }
+    const userConfig = Object.assign(Object.assign({}, defaults), (ctx.getConfig("picBed.oci") || {}));
     return mergePluginConfig(userConfig);
 }
 function loadUserConfig(ctx) {
     const userConfig = ctx.getConfig("picBed.oci");
     if (!userConfig) {
-        throw new Error("Cannot find OCI Object Storage uploader config");
+        throw new Error("OCI config not found. Please run: picgo set uploader oci");
     }
-    if (!userConfig.endpoint) {
-        userConfig.endpoint = `https://${userConfig.namespace}.compat.objectstorage.${userConfig.region}.oraclecloud.com`;
+    if (!userConfig.accessKeyID || !userConfig.secretAccessKey) {
+        throw new Error("OCI accessKeyID and secretAccessKey are required");
     }
-    userConfig.acl = userConfig.acl || "public-read";
-    userConfig.uploadPath = userConfig.uploadPath || "{year}/{month}/{md5}.{extName}";
-    return userConfig;
+    if (!userConfig.namespace || !userConfig.region || !userConfig.bucketName) {
+        throw new Error("OCI namespace, region, and bucketName are required");
+    }
+    return {
+        accessKeyID: userConfig.accessKeyID,
+        secretAccessKey: userConfig.secretAccessKey,
+        namespace: userConfig.namespace,
+        region: userConfig.region,
+        bucketName: userConfig.bucketName,
+        uploadPath: userConfig.uploadPath || "{year}/{month}/{md5}.{extName}",
+        endpoint: userConfig.endpoint || `https://${userConfig.namespace}.compat.objectstorage.${userConfig.region}.oraclecloud.com`,
+        proxy: userConfig.proxy,
+        acl: userConfig.acl || "public-read",
+        outputURLPattern: userConfig.outputURLPattern,
+    };
 }

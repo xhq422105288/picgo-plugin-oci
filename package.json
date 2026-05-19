@@ -7,10 +7,10 @@
     "access": "public"
   },
   "type": "commonjs",
-  "homepage": "https://github.com/anomalyco/picgo-plugin-oci",
+  "homepage": "https://git.huaqingxu.dpdns.org/devops/picgo-oci-plugin",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/anomalyco/picgo-plugin-oci.git"
+    "url": "https://git.huaqingxu.dpdns.org/devops/picgo-oci-plugin.git"
   },
   "scripts": {
     "build": "tsc -p .",
@@ -35,7 +35,6 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "~3.729.0",
-    "@aws-sdk/s3-request-presigner": "~3.729.0",
     "@smithy/node-http-handler": "~3.3.1",
     "file-type": ">16.5.0 <17.0.0",
     "hpagent": "~1.2.0",

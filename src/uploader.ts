@@ -8,7 +8,7 @@ import {
   NodeHttpHandler,
   NodeHttpHandlerOptions,
 } from "@smithy/node-http-handler"
-import { HttpProxyAgent, HttpsProxyAgent } from "hpagent"
+import { HttpsProxyAgent, HttpProxyAgent } from "hpagent"
 import { IImgInfo } from "picgo"
 import { extractInfo, getProxyAgent } from "./utils"
 import { IOciUserConfig } from "./config"
@@ -16,7 +16,6 @@ import { IOciUserConfig } from "./config"
 export interface IUploadResult {
   index: number
   key: string
-  url?: string
   error?: Error
 }
 
@@ -24,19 +23,20 @@ function createS3Client(opts: IOciUserConfig): S3Client {
   let sslEnabled = true
   if (opts.endpoint) {
     try {
-      const u = new URL(opts.endpoint)
-      sslEnabled = u.protocol === "https:"
-    } catch (_) {
+      sslEnabled = new URL(opts.endpoint).protocol === "https:"
+    } catch {
       sslEnabled = true
     }
   }
 
   const httpHandlerOpts: NodeHttpHandlerOptions = {}
   const proxyAgent = getProxyAgent(opts.proxy, sslEnabled)
-  if (sslEnabled) {
-    httpHandlerOpts.httpsAgent = proxyAgent as HttpsProxyAgent
-  } else {
-    httpHandlerOpts.httpAgent = proxyAgent as HttpProxyAgent
+  if (proxyAgent) {
+    if (sslEnabled) {
+      httpHandlerOpts.httpsAgent = proxyAgent as HttpsProxyAgent
+    } else {
+      httpHandlerOpts.httpAgent = proxyAgent as HttpProxyAgent
+    }
   }
 
   const clientOptions: S3ClientConfig = {
@@ -78,37 +78,25 @@ async function createUploadTask(
     return result
   }
 
-  let body: Buffer
-  let contentType: string
-  let contentEncoding: string
-
   try {
-    ({ body, contentType, contentEncoding } = await extractInfo(opts.item))
-  } catch (err) {
-    result.error = new Error(
-      `Failed to extract "${opts.item.fileName}" image info: ${err instanceof Error ? err.message : String(err)}`,
-    )
-    return result
-  }
+    const { body, contentType, contentEncoding } = await extractInfo(opts.item)
 
-  const acl = opts.acl as ObjectCannedACL
-  const command = new PutObjectCommand({
-    Bucket: opts.bucketName,
-    Key: opts.path,
-    ACL: acl,
-    Body: body,
-    ContentType: contentType,
-    ContentEncoding: contentEncoding || undefined,
-  })
+    const command = new PutObjectCommand({
+      Bucket: opts.bucketName,
+      Key: opts.path,
+      ACL: opts.acl as ObjectCannedACL,
+      Body: body,
+      ContentType: contentType,
+      ContentEncoding: contentEncoding || undefined,
+    })
 
-  try {
     await opts.client.send(command)
-    result.url = `https://${opts.bucketName}.${opts.path}`
   } catch (err) {
-    result.error = new Error(
-      `Failed to upload "${opts.item.fileName}" to OCI: ${err instanceof Error ? err.message : String(err)}`,
-    )
+    result.error = err instanceof Error
+      ? err
+      : new Error(`Upload failed: ${String(err)}`)
   }
+
   return result
 }
 

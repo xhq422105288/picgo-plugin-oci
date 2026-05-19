@@ -4,7 +4,6 @@ import { IOciUserConfig } from "./config";
 export interface IUploadResult {
     index: number;
     key: string;
-    url?: string;
     error?: Error;
 }
 declare function createS3Client(opts: IOciUserConfig): S3Client;

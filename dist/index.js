@@ -10,37 +10,47 @@ const upload = async (ctx) => {
     const userConfig = (0, config_1.loadUserConfig)(ctx);
     const client = uploader_1.default.createS3Client(userConfig);
     const output = ctx.output;
+    const endpoint = userConfig.endpoint;
+    const bucketName = userConfig.bucketName;
     const tasks = output.map((item, idx) => {
         item.uploadDate = new Date();
         const fileNameGenerator = new utils_1.FileNameGenerator(item);
         return uploader_1.default.createUploadTask({
             client,
             index: idx,
-            bucketName: userConfig.bucketName,
+            bucketName,
             path: fileNameGenerator.format(userConfig.uploadPath),
             item,
             acl: userConfig.acl || "public-read",
         });
     });
-    let results;
-    try {
-        results = await Promise.all(tasks);
-    }
-    catch (err) {
-        ctx.log.error("Upload to OCI Object Storage failed, please check your network and configuration");
-        throw err;
-    }
+    const results = await Promise.all(tasks.map(async (task) => {
+        try {
+            return await task;
+        }
+        catch (err) {
+            return {
+                index: 0,
+                key: "",
+                error: err instanceof Error ? err : new Error(String(err)),
+            };
+        }
+    }));
     for (const result of results) {
-        const { index, url, key, error } = result;
-        delete output[index].buffer;
-        delete output[index].base64Image;
-        output[index].uploadPath = key;
+        const { index, key, error } = result;
+        const item = output[index];
+        item.type = pluginName;
+        item.uploadPath = key;
+        delete item.buffer;
+        delete item.base64Image;
         if (error) {
-            output[index].error = error;
+            item.error = error;
+            ctx.log.error(`[OCI] Upload failed for "${item.fileName}": ${error.message}`);
         }
         else {
-            output[index].url = url;
-            output[index].imgUrl = url;
+            const url = `${endpoint}/${bucketName}/${key}`;
+            item.url = url;
+            item.imgUrl = url;
         }
     }
     return ctx;
@@ -65,18 +75,16 @@ const afterUploadPlugins = (ctx) => {
         ];
     }, []);
     if (errList.length > 0) {
-        const msg = `OCI Plugin: ${errList.length} of ${ctx.output.length + errList.length} uploads failed.`;
+        const total = ctx.output.length + errList.length;
+        const msg = `OCI: ${errList.length}/${total} uploads failed`;
         for (const item of errList) {
-            ctx.log.error(`Item ${item.fileName}:`, (_a = item.error) === null || _a === void 0 ? void 0 : _a.message);
+            ctx.log.error(`[OCI] ${item.fileName}: ${(_a = item.error) === null || _a === void 0 ? void 0 : _a.message}`);
         }
         ctx.emit("notification", {
             title: "OCI Upload Error",
-            body: msg + " Failed: " + errList.map((item) => item.fileName).join(", "),
+            body: `${msg}\n${errList.map((i) => i.fileName).join(", ")}`,
         });
-        if (ctx.output.length > 0) {
-            ctx.log.error(msg);
-        }
-        else {
+        if (ctx.output.length === 0) {
             throw new Error(msg);
         }
     }
@@ -93,7 +101,6 @@ module.exports = (ctx) => {
         });
         ctx.helper.afterUploadPlugins.register(pluginName, {
             handle: afterUploadPlugins,
-            config,
         });
     };
     return {
