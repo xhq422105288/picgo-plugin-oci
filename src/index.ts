@@ -25,12 +25,12 @@ const upload = async (ctx: IPicGo) => {
     })
   })
 
-  const results = await Promise.all(tasks.map(async (task) => {
+  const results = await Promise.all(tasks.map(async (task, idx) => {
     try {
       return await task
     } catch (err) {
       return {
-        index: 0,
+        index: idx,
         key: "",
         error: err instanceof Error ? err : new Error(String(err)),
       }
@@ -81,16 +81,16 @@ const afterUploadPlugins = (ctx: IPicGo) => {
 
   if (errList.length > 0) {
     const total = ctx.output.length + errList.length
-    const msg = `OCI: ${errList.length}/${total} uploads failed`
+    const details = errList.map((i) => `[${i.fileName}] ${i.error?.message || "unknown error"}`)
+    ctx.emit("notification", {
+      title: "OCI Upload Error",
+      body: `${errList.length}/${total} failed\n${details.join("\n")}`,
+    })
     for (const item of errList) {
       ctx.log.error(`[OCI] ${item.fileName}: ${item.error?.message}`)
     }
-    ctx.emit("notification", {
-      title: "OCI Upload Error",
-      body: `${msg}\n${errList.map((i) => i.fileName).join(", ")}`,
-    })
     if (ctx.output.length === 0) {
-      throw new Error(msg)
+      throw new Error(`OCI: ${errList.length}/${total} uploads failed`)
     }
   }
 }

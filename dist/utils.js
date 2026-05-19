@@ -91,7 +91,6 @@ async function extractInfo(info) {
         const b64 = info.base64Image.replace(/^data:[/\w]+;base64,/, "");
         result.contentType = (_a = info.base64Image.match(/[^:]\w+\/[\w-+\d.]+(?=;|,)/)) === null || _a === void 0 ? void 0 : _a[0];
         result.body = Buffer.from(b64, "base64");
-        result.contentEncoding = "base64";
     }
     else if (info.buffer) {
         if (info.extname) {

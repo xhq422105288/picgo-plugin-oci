@@ -24,13 +24,13 @@ const upload = async (ctx) => {
             acl: userConfig.acl || "public-read",
         });
     });
-    const results = await Promise.all(tasks.map(async (task) => {
+    const results = await Promise.all(tasks.map(async (task, idx) => {
         try {
             return await task;
         }
         catch (err) {
             return {
-                index: 0,
+                index: idx,
                 key: "",
                 error: err instanceof Error ? err : new Error(String(err)),
             };
@@ -76,16 +76,16 @@ const afterUploadPlugins = (ctx) => {
     }, []);
     if (errList.length > 0) {
         const total = ctx.output.length + errList.length;
-        const msg = `OCI: ${errList.length}/${total} uploads failed`;
+        const details = errList.map((i) => { var _a; return `[${i.fileName}] ${((_a = i.error) === null || _a === void 0 ? void 0 : _a.message) || "unknown error"}`; });
+        ctx.emit("notification", {
+            title: "OCI Upload Error",
+            body: `${errList.length}/${total} failed\n${details.join("\n")}`,
+        });
         for (const item of errList) {
             ctx.log.error(`[OCI] ${item.fileName}: ${(_a = item.error) === null || _a === void 0 ? void 0 : _a.message}`);
         }
-        ctx.emit("notification", {
-            title: "OCI Upload Error",
-            body: `${msg}\n${errList.map((i) => i.fileName).join(", ")}`,
-        });
         if (ctx.output.length === 0) {
-            throw new Error(msg);
+            throw new Error(`OCI: ${errList.length}/${total} uploads failed`);
         }
     }
 };
