@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "sourceMap": false,
+    "target": "es2017",
+    "declaration": true,
+    "outDir": "dist",
+    "strictFunctionTypes": true,
+    "lib": [
+      "es2017",
+      "es2015",
+      "es6"
+    ]
+  },
+  "include": [
+    "./src/**/*"
+  ],
+  "exclude": [ "node_modules", "dist", "**/*.spec.ts", "**/__tests__"]
+}

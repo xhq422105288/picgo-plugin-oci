@@ -1,0 +1,45 @@
+{
+  "name": "picgo-plugin-oci",
+  "version": "1.0.0",
+  "description": "PicGo uploader for Oracle Cloud Infrastructure (OCI) Object Storage",
+  "main": "dist/index.js",
+  "publishConfig": {
+    "access": "public"
+  },
+  "type": "commonjs",
+  "homepage": "https://github.com/anomalyco/picgo-plugin-oci",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anomalyco/picgo-plugin-oci.git"
+  },
+  "scripts": {
+    "build": "tsc -p .",
+    "dev": "tsc -w -p .",
+    "pub": "rm -rf dist/* && npm run build && npm publish",
+    "patch": "npm version patch -m 'bump version into v%s'"
+  },
+  "keywords": [
+    "oracle-cloud",
+    "oci",
+    "object-storage",
+    "picgo",
+    "picgo-gui-plugin",
+    "picgo-plugin"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/mime": "^3.0.4",
+    "@types/node": "^22.10.1",
+    "typescript": "^5.7.2"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "~3.729.0",
+    "@aws-sdk/s3-request-presigner": "~3.729.0",
+    "@smithy/node-http-handler": "~3.3.1",
+    "file-type": ">16.5.0 <17.0.0",
+    "hpagent": "~1.2.0",
+    "mime": ">=3.0.0 <4.0.0",
+    "picgo": "^1.5.8"
+  }
+}
