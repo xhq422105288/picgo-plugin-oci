@@ -14,7 +14,23 @@ picgo install oci
 
 ### PicGo GUI
 
-Search for `oci` in the plugin marketplace and install.
+If published to the marketplace, search for `oci` and install.
+
+### Local Import
+
+For unpublished development or self-hosted usage:
+
+1. Clone or download this repo:
+   ```bash
+   git clone https://git.huaqingxu.dpdns.org/devops/picgo-oci-plugin.git
+   ```
+2. Install dependencies and build:
+   ```bash
+   cd picgo-oci-plugin
+   npm install
+   npm run build
+   ```
+3. In PicGo GUI, go to **插件设置** → **导入本地插件** and select the plugin root directory (`picgo-oci-plugin/`).
 
 ## Configuration
 
