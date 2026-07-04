@@ -1,16 +1,16 @@
 {
   "name": "picgo-plugin-oci",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "description": "PicGo uploader for Oracle Cloud Infrastructure (OCI) Object Storage",
   "main": "dist/index.js",
   "publishConfig": {
     "access": "public"
   },
   "type": "commonjs",
-  "homepage": "https://git.huaqingxu.dpdns.org/devops/picgo-oci-plugin",
+  "homepage": "https://github.com/xhq422105288/picgo-plugin-oci",
   "repository": {
     "type": "git",
-    "url": "https://git.huaqingxu.dpdns.org/devops/picgo-oci-plugin.git"
+    "url": "https://github.com/xhq422105288/picgo-plugin-oci.git"
   },
   "scripts": {
     "build": "tsc -p .",

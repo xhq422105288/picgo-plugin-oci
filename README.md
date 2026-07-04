@@ -4,6 +4,20 @@ A [PicGo](https://github.com/PicGo/PicGo-Core) uploader plugin for [Oracle Cloud
 
 OCI Object Storage is S3-compatible, this plugin uses the AWS SDK for JavaScript (S3 client) to upload images.
 
+## Features
+
+### v1.0.3
+
+- Delete images from OCI when removed in PicGo GUI album
+
+### v1.0.0
+
+- Upload images to OCI Object Storage
+- Custom upload path with date, hash, and filename templates
+- Custom output URL pattern
+- Proxy support
+- Canned ACL configuration
+
 ## Install
 
 ### PicGo-CLI
@@ -15,23 +29,6 @@ picgo install oci
 ### PicGo GUI
 
 If published to the marketplace, search for `oci` and install.
-
-### Local Import
-
-For unpublished development or self-hosted usage:
-
-1. Clone or download this repo:
-   ```bash
-   git clone https://git.huaqingxu.dpdns.org/devops/picgo-oci-plugin.git
-   ```
-2. Install dependencies and build:
-   ```bash
-   cd picgo-oci-plugin
-   npm install
-   npm run build
-   ```
-3. In PicGo GUI, go to **插件设置** → **导入本地插件** and select the plugin root directory (`picgo-oci-plugin/`).
-
 ## Configuration
 
 ```bash

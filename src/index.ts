@@ -99,6 +99,37 @@ const config = (ctx: IPicGo): IPluginConfig[] => {
   return getPluginConfig(ctx)
 }
 
+const deleteImage = async (ctx: IPicGo, imgInfo: IImgInfo) => {
+  const userConfig = loadUserConfig(ctx)
+  const client = uploader.createS3Client(userConfig)
+
+  let key = imgInfo.uploadPath
+  if (!key && imgInfo.url) {
+    const bucketPrefix = `/${userConfig.bucketName}/`
+    const urlObj = new URL(imgInfo.url)
+    const idx = urlObj.pathname.indexOf(bucketPrefix)
+    if (idx !== -1) {
+      key = urlObj.pathname.slice(idx + bucketPrefix.length)
+    }
+  }
+
+  if (!key) {
+    ctx.log.warn(`[OCI] Cannot determine object key for deletion: ${imgInfo.fileName || imgInfo.url}`)
+    return
+  }
+
+  try {
+    await uploader.createDeleteTask({
+      client,
+      bucketName: userConfig.bucketName,
+      key,
+    })
+    ctx.log.info(`[OCI] Deleted: ${key}`)
+  } catch (err) {
+    ctx.log.error(`[OCI] Delete failed for "${key}": ${err instanceof Error ? err.message : String(err)}`)
+  }
+}
+
 export = (ctx: IPicGo) => {
   const register = () => {
     ctx.helper.uploader.register(pluginName, {
@@ -108,6 +139,13 @@ export = (ctx: IPicGo) => {
     })
     ctx.helper.afterUploadPlugins.register(pluginName, {
       handle: afterUploadPlugins,
+    })
+    ctx.on('remove', (files: IImgInfo[]) => {
+      for (const file of files) {
+        if (file.type === pluginName) {
+          deleteImage(ctx, file)
+        }
+      }
     })
   }
   return {

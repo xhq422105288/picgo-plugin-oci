@@ -2,6 +2,7 @@ import {
   S3Client,
   S3ClientConfig,
   PutObjectCommand,
+  DeleteObjectCommand,
   ObjectCannedACL,
 } from "@aws-sdk/client-s3"
 import {
@@ -100,7 +101,22 @@ async function createUploadTask(
   return result
 }
 
+interface DeleteTaskOpts {
+  client: S3Client
+  bucketName: string
+  key: string
+}
+
+async function createDeleteTask(opts: DeleteTaskOpts): Promise<void> {
+  const command = new DeleteObjectCommand({
+    Bucket: opts.bucketName,
+    Key: opts.key,
+  })
+  await opts.client.send(command)
+}
+
 export default {
   createS3Client,
   createUploadTask,
+  createDeleteTask,
 }
